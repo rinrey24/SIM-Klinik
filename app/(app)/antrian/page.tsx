@@ -1,7 +1,7 @@
 import { requireAuth } from '@/lib/auth/session';
-import { Soon } from '@/components/soon';
+import { AntrianClient } from './client';
 
-export default async function Page() {
-  await requireAuth();
-  return <Soon title="Antrian" desc="Papan antrian real-time akan tersedia di fase berikutnya." />;
+export default async function AntrianPage() {
+  const s = await requireAuth();
+  return <AntrianClient role={s.role} />;
 }

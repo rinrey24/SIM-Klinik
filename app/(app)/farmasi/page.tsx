@@ -1,7 +1,7 @@
 import { requireRole } from '@/lib/auth/session';
-import { Soon } from '@/components/soon';
+import { FarmasiClient } from './client';
 
-export default async function Page() {
+export default async function FarmasiPage() {
   await requireRole(['admin', 'apoteker']);
-  return <Soon title="Farmasi" desc="Antrean resep, dispensing, dan stok obat." />;
+  return <FarmasiClient />;
 }

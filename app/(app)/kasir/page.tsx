@@ -1,7 +1,7 @@
 import { requireRole } from '@/lib/auth/session';
-import { Soon } from '@/components/soon';
+import { KasirClient } from './client';
 
-export default async function Page() {
+export default async function KasirPage() {
   await requireRole(['admin', 'kasir']);
-  return <Soon title="Kasir" desc="Tagihan otomatis dari tindakan + obat + jasa." />;
+  return <KasirClient />;
 }
