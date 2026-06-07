@@ -1,7 +1,7 @@
 import { requireRole } from '@/lib/auth/session';
-import { Soon } from '@/components/soon';
+import { PengaturanClient } from './client';
 
-export default async function Page() {
+export default async function PengaturanPage() {
   await requireRole(['admin']);
-  return <Soon title="Pengaturan" desc="Profil klinik, user & peran, tarif, integrasi SATUSEHAT/BPJS." />;
+  return <PengaturanClient />;
 }

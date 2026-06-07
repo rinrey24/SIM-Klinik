@@ -1,7 +1,7 @@
 import { requireRole } from '@/lib/auth/session';
-import { Soon } from '@/components/soon';
+import { LaporanClient } from './client';
 
-export default async function Page() {
+export default async function LaporanPage() {
   await requireRole(['admin']);
-  return <Soon title="Laporan" desc="Keuangan, kunjungan, obat terlaris, penjamin." />;
+  return <LaporanClient />;
 }

@@ -1,7 +1,7 @@
 import { requireAuth } from '@/lib/auth/session';
-import { Soon } from '@/components/soon';
+import { JadwalClient } from './client';
 
-export default async function Page() {
+export default async function JadwalPage() {
   await requireAuth();
-  return <Soon title="Jadwal & Janji Temu" desc="Kalender praktik dokter & reminder WhatsApp." />;
+  return <JadwalClient />;
 }
