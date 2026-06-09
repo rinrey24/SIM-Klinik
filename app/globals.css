@@ -143,3 +143,12 @@ body { font-family: 'Plus Jakarta Sans', -apple-system, system-ui, sans-serif; -
   .fade-in { animation: fade .25s ease both; }
   @keyframes fade { from { transform: translateY(6px); opacity: 0; } to { transform: none; opacity: 1; } }
 }
+
+/* ---- print ---- */
+@media print {
+  .no-print { display: none !important; }
+  html, body { background: #fff !important; }
+  .print-sheet { box-shadow: none !important; border: none !important; margin: 0 !important; }
+  @page { margin: 16mm; }
+}
+

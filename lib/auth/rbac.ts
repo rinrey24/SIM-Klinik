@@ -25,7 +25,7 @@ export const ROLE_HOMES: Record<Role, string> = {
 export const ROLE_NAV: Record<Role, string[]> = {
   admin: ['dashboard', 'antrian', 'jadwal', 'laporan', 'farmasi', 'pengaturan'],
   pendaftaran: ['pendaftaran', 'antrian', 'jadwal'],
-  dokter: ['antrian', 'rme', 'jadwal'],
+  dokter: ['antrian', 'rme', 'surat', 'jadwal'],
   perawat: ['antrian', 'pendaftaran'],
   apoteker: ['farmasi'],
   kasir: ['kasir', 'antrian'],

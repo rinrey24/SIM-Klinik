@@ -270,7 +270,7 @@ function NotaSuccess({ bill, onBack, onToast }: { bill: BillDetail; onBack: () =
         <Row k="Dibayar" v={bill.payMethod === 'bpjs' ? formatRp(0) : formatRp(bill.total)} bold mono />
       </div>
       <div className="card-pad flex gap-2.5 flex-wrap">
-        <button className="btn btn-ghost flex-1" onClick={() => onToast('success', 'Nota dicetak')}>
+        <button className="btn btn-ghost flex-1" onClick={() => window.open(`/cetak/nota/${bill.id}`, '_blank')}>
           <Printer size={16} /> Cetak
         </button>
         <button className="btn btn-soft flex-1" onClick={() => onToast('success', `Nota dikirim via WhatsApp ke ${bill.patient.phone ?? '—'}`)}>

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, UserPlus, ListChecks, Calendar, Stethoscope, Pill,
-  Receipt, BarChart3, Settings, Heart, Bell, Search, LogOut, Menu, X, Sun, Moon,
+  Receipt, BarChart3, Settings, Heart, Bell, Search, LogOut, Menu, X, Sun, Moon, FileText,
   type LucideIcon,
 } from 'lucide-react';
 import { Avatar, SatuSehatBadge } from '@/components/ui/primitives';
@@ -18,6 +18,7 @@ const META: Record<string, { title: string; Icon: LucideIcon; path: string }> = 
   antrian:     { title: 'Antrian', Icon: ListChecks, path: '/antrian' },
   jadwal:      { title: 'Jadwal', Icon: Calendar, path: '/jadwal' },
   rme:         { title: 'Rekam Medis', Icon: Stethoscope, path: '/rme' },
+  surat:       { title: 'Surat', Icon: FileText, path: '/surat' },
   farmasi:     { title: 'Farmasi', Icon: Pill, path: '/farmasi' },
   kasir:       { title: 'Kasir', Icon: Receipt, path: '/kasir' },
   laporan:     { title: 'Laporan', Icon: BarChart3, path: '/laporan' },
@@ -27,7 +28,7 @@ const META: Record<string, { title: string; Icon: LucideIcon; path: string }> = 
 const NAV: Record<Role, string[]> = {
   admin:       ['dashboard', 'antrian', 'jadwal', 'laporan', 'farmasi', 'pengaturan'],
   pendaftaran: ['pendaftaran', 'antrian', 'jadwal'],
-  dokter:      ['antrian', 'rme', 'jadwal'],
+  dokter:      ['antrian', 'rme', 'surat', 'jadwal'],
   perawat:     ['antrian', 'pendaftaran'],
   apoteker:    ['farmasi'],
   kasir:       ['kasir', 'antrian'],
@@ -55,7 +56,13 @@ export function AppShell({
   const current = nav.find((k) => pathname?.startsWith(META[k].path)) ?? nav[0];
 
   React.useEffect(() => {
+    const saved = (localStorage.getItem('sk_theme') as 'light' | 'dark' | null);
+    if (saved) setTheme(saved);
+  }, []);
+
+  React.useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('sk_theme', theme);
   }, [theme]);
 
   const logout = async () => {

@@ -6,7 +6,7 @@ import { relations, sql } from 'drizzle-orm';
 import {
   roleEnum, penjaminEnum, sexEnum, queueStatusEnum, queueSourceEnum, rxStatusEnum,
   billStatusEnum, billItemTypeEnum, payMethodEnum, syncStatusEnum, tariffTypeEnum,
-  appointmentStatusEnum, outboxKindEnum, outboxStatusEnum,
+  appointmentStatusEnum, outboxKindEnum, outboxStatusEnum, documentTypeEnum,
 } from './enums';
 
 export * from './enums';
@@ -254,6 +254,21 @@ export const integrationCredentials = pgTable('integration_credentials', {
   dataEncrypted: bytea().notNull(),
   updatedAt: ts(),
 }, (t) => [uniqueIndex('integration_branch_provider_uniq').on(t.branchId, t.provider)]);
+
+export const documents = pgTable('documents', {
+  id: uuid().primaryKey().defaultRandom(),
+  branchId: uuid().notNull().references(() => branches.id),
+  encounterId: uuid().references(() => encounters.id),
+  patientId: uuid().notNull().references(() => patients.id),
+  doctorId: uuid().notNull().references(() => users.id),
+  type: documentTypeEnum().notNull(),
+  number: text().notNull(),
+  data: jsonb().notNull(),
+  createdAt: ts(),
+}, (t) => [
+  uniqueIndex('documents_branch_number_uniq').on(t.branchId, t.number),
+  index('documents_patient_idx').on(t.patientId),
+]);
 
 export const auditLogs = pgTable('audit_logs', {
   id: uuid().primaryKey().defaultRandom(),

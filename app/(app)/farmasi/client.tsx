@@ -1,8 +1,8 @@
 'use client';
 import * as React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Pill, Check, AlertTriangle, Clock } from 'lucide-react';
-import { Avatar, EmptyState, Toast } from '@/components/ui/primitives';
+import { Pill, Check, AlertTriangle, Clock, Plus, PackagePlus } from 'lucide-react';
+import { Avatar, EmptyState, Modal, Toast } from '@/components/ui/primitives';
 import { formatJam, formatRp } from '@/lib/utils';
 
 type Prescription = {
@@ -37,7 +37,7 @@ export function FarmasiClient() {
         ))}
       </div>
 
-      {tab === 'resep' ? <RxQueue onToast={pushToast} /> : <StockTable />}
+      {tab === 'resep' ? <RxQueue onToast={pushToast} /> : <StockTable onToast={pushToast} />}
 
       {toast && (
         <div className="fixed bottom-24 md:bottom-6 left-0 right-0 flex justify-center z-50 pointer-events-none px-4">
@@ -140,7 +140,10 @@ function RxQueue({ onToast }: { onToast: (k: 'info' | 'success', m: string) => v
   );
 }
 
-function StockTable() {
+function StockTable({ onToast }: { onToast: (k: 'info' | 'success', m: string) => void }) {
+  const qc = useQueryClient();
+  const [addOpen, setAddOpen] = React.useState(false);
+  const [restockDrug, setRestockDrug] = React.useState<Drug | null>(null);
   const list = useQuery({
     queryKey: ['drugs', 'all'],
     queryFn: async () => (await (await fetch('/api/drugs')).json()) as { data: Drug[] },
@@ -158,6 +161,11 @@ function StockTable() {
 
   return (
     <div className="flex flex-col gap-3">
+      <div className="flex justify-end">
+        <button className="btn btn-primary btn-sm" onClick={() => setAddOpen(true)}>
+          <Plus size={16} /> Tambah Obat
+        </button>
+      </div>
       {(low.length > 0 || expSoon.length > 0) && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {low.length > 0 && (
@@ -183,7 +191,7 @@ function StockTable() {
       <div className="card overflow-x-auto" style={{ padding: 0 }}>
         <table className="tbl">
           <thead>
-            <tr><th>Obat</th><th>Jenis</th><th>Stok</th><th className="hidden md:table-cell">Harga</th><th>Kedaluwarsa</th><th>Status</th></tr>
+            <tr><th>Obat</th><th>Jenis</th><th>Stok</th><th className="hidden md:table-cell">Harga</th><th>Kedaluwarsa</th><th>Status</th><th></th></tr>
           </thead>
           <tbody>
             {drugs.map((d) => {
@@ -196,12 +204,154 @@ function StockTable() {
                   <td className="mono hidden md:table-cell">{formatRp(d.price)}</td>
                   <td className="mono muted">{d.expiry?.slice(0, 7) ?? '—'}</td>
                   <td>{isLow ? <span className="badge b-red">Menipis</span> : <span className="badge b-green">Aman</span>}</td>
+                  <td>
+                    <button
+                      className="btn btn-sm btn-ghost"
+                      onClick={(e) => { e.stopPropagation(); setRestockDrug(d); }}
+                      title="Tambah / sesuaikan stok"
+                    >
+                      <PackagePlus size={15} />
+                    </button>
+                  </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
       </div>
+
+      {addOpen && (
+        <AddDrugForm
+          onClose={() => setAddOpen(false)}
+          onDone={() => { onToast('success', 'Obat baru ditambahkan'); qc.invalidateQueries({ queryKey: ['drugs'] }); setAddOpen(false); }}
+          onError={(m) => onToast('info', m)}
+        />
+      )}
+      {restockDrug && (
+        <RestockForm
+          drug={restockDrug}
+          onClose={() => setRestockDrug(null)}
+          onDone={() => { onToast('success', 'Stok diperbarui'); qc.invalidateQueries({ queryKey: ['drugs'] }); setRestockDrug(null); }}
+          onError={(m) => onToast('info', m)}
+        />
+      )}
     </div>
+  );
+}
+
+function AddDrugForm({ onClose, onDone, onError }: { onClose: () => void; onDone: () => void; onError: (m: string) => void }) {
+  const [f, setF] = React.useState({ name: '', kind: 'Tablet', stock: '0', minStock: '0', price: '', expiry: '' });
+  const [busy, setBusy] = React.useState(false);
+  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setF({ ...f, [k]: e.target.value });
+  const valid = f.name.trim().length > 1 && f.price !== '' && Number(f.price) >= 0;
+  const submit = async () => {
+    setBusy(true);
+    try {
+      const r = await fetch('/api/drugs', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: f.name, kind: f.kind, stock: Number(f.stock), minStock: Number(f.minStock),
+          price: Number(f.price), expiry: f.expiry || undefined,
+        }),
+      });
+      if (!r.ok) throw new Error((await r.json())?.error?.message ?? 'Gagal menambah obat');
+      onDone();
+    } catch (e) { onError((e as Error).message); setBusy(false); }
+  };
+  return (
+    <Modal title="Tambah Obat" onClose={onClose} wide footer={
+      <>
+        <button className="btn btn-ghost" onClick={onClose} disabled={busy}>Batal</button>
+        <button className="btn btn-primary" disabled={!valid || busy} onClick={submit}><Plus size={16} /> Simpan</button>
+      </>
+    }>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="field" style={{ gridColumn: '1 / -1' }}>
+          <label className="label">Nama obat</label>
+          <input className="input" placeholder="cth. Paracetamol 500mg" value={f.name} onChange={set('name')} />
+        </div>
+        <div className="field">
+          <label className="label">Jenis</label>
+          <select className="select" value={f.kind} onChange={set('kind')}>
+            {['Tablet', 'Kapsul', 'Sirup', 'Botol', 'Salep', 'Injeksi', 'Tetes'].map((k) => <option key={k}>{k}</option>)}
+          </select>
+        </div>
+        <div className="field">
+          <label className="label">Harga satuan (Rp)</label>
+          <input className="input mono" type="number" min={0} placeholder="0" value={f.price} onChange={set('price')} />
+        </div>
+        <div className="field">
+          <label className="label">Stok awal</label>
+          <input className="input mono" type="number" min={0} value={f.stock} onChange={set('stock')} />
+        </div>
+        <div className="field">
+          <label className="label">Stok minimum</label>
+          <input className="input mono" type="number" min={0} value={f.minStock} onChange={set('minStock')} />
+        </div>
+        <div className="field" style={{ gridColumn: '1 / -1' }}>
+          <label className="label">Kedaluwarsa</label>
+          <input className="input mono" type="date" value={f.expiry} onChange={set('expiry')} />
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function RestockForm({ drug, onClose, onDone, onError }: { drug: Drug; onClose: () => void; onDone: () => void; onError: (m: string) => void }) {
+  const [qty, setQty] = React.useState('0');
+  const [reason, setReason] = React.useState<'restock' | 'adjustment' | 'expired' | 'koreksi'>('restock');
+  const [expiry, setExpiry] = React.useState('');
+  const [busy, setBusy] = React.useState(false);
+  const n = Number(qty);
+  const newStock = drug.stock + (Number.isNaN(n) ? 0 : n);
+  const valid = n !== 0 && newStock >= 0;
+  const submit = async () => {
+    setBusy(true);
+    try {
+      const r = await fetch(`/api/drugs/${drug.id}/restock`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ qty: n, reason, expiry: expiry || undefined }),
+      });
+      if (!r.ok) throw new Error((await r.json())?.error?.message ?? 'Gagal memperbarui stok');
+      onDone();
+    } catch (e) { onError((e as Error).message); setBusy(false); }
+  };
+  return (
+    <Modal title={`Stok — ${drug.name}`} onClose={onClose} footer={
+      <>
+        <button className="btn btn-ghost" onClick={onClose} disabled={busy}>Batal</button>
+        <button className="btn btn-primary" disabled={!valid || busy} onClick={submit}><PackagePlus size={16} /> Simpan</button>
+      </>
+    }>
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between text-[13.5px] px-3 py-2 rounded-[10px]" style={{ background: 'var(--surface-2)' }}>
+          <span className="muted">Stok saat ini</span>
+          <strong className="mono">{drug.stock} {drug.kind.toLowerCase()}</strong>
+        </div>
+        <div className="field">
+          <label className="label">Perubahan qty (+ masuk / − keluar)</label>
+          <input className="input mono" type="number" value={qty} onChange={(e) => setQty(e.target.value)} placeholder="cth. 100 atau -10" />
+        </div>
+        <div className="field">
+          <label className="label">Alasan</label>
+          <select className="select" value={reason} onChange={(e) => setReason(e.target.value as typeof reason)}>
+            <option value="restock">Barang masuk (restock)</option>
+            <option value="adjustment">Penyesuaian stok opname</option>
+            <option value="expired">Pemusnahan kedaluwarsa</option>
+            <option value="koreksi">Koreksi data</option>
+          </select>
+        </div>
+        {reason === 'restock' && (
+          <div className="field">
+            <label className="label">Perbarui kedaluwarsa (opsional)</label>
+            <input className="input mono" type="date" value={expiry} onChange={(e) => setExpiry(e.target.value)} />
+          </div>
+        )}
+        <div className="flex items-center justify-between text-[13.5px] px-3 py-2 rounded-[10px]" style={{ background: newStock < drug.minStock ? 'var(--red-tint)' : 'var(--green-tint)' }}>
+          <span className="muted">Stok setelah</span>
+          <strong className="mono" style={{ color: newStock < drug.minStock ? 'var(--red)' : 'var(--green)' }}>{newStock} {drug.kind.toLowerCase()}</strong>
+        </div>
+      </div>
+    </Modal>
   );
 }

@@ -14,3 +14,4 @@ export const tariffTypeEnum = pgEnum('tariff_type', ['jasa', 'tindakan']);
 export const appointmentStatusEnum = pgEnum('appointment_status', ['terjadwal', 'selesai', 'batal']);
 export const outboxKindEnum = pgEnum('outbox_kind', ['satusehat', 'whatsapp', 'bpjs', 'email']);
 export const outboxStatusEnum = pgEnum('outbox_status', ['menunggu', 'sukses', 'gagal']);
+export const documentTypeEnum = pgEnum('document_type', ['sakit', 'sehat', 'rujukan']);
