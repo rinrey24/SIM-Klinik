@@ -1,7 +1,7 @@
 'use client';
 import * as React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Search, UserPlus, ChevronRight, Plus, Info, FileText, Check, AlertTriangle } from 'lucide-react';
+import { Search, UserPlus, ChevronRight, Plus, Info, FileText, Check, AlertTriangle, Shield } from 'lucide-react';
 import { Avatar, PenjaminBadge, EmptyState, Modal, Toast } from '@/components/ui/primitives';
 import { formatTanggal } from '@/lib/utils';
 
@@ -251,8 +251,28 @@ function NewPatientForm({
   });
   const [busy, setBusy] = React.useState(false);
   const [err, setErr] = React.useState('');
+  const [bpjsCheck, setBpjsCheck] = React.useState<
+    { state: 'idle' | 'loading' | 'ok' | 'error'; msg?: string }
+  >({ state: 'idle' });
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setF({ ...f, [k]: e.target.value });
+
+  const cekPeserta = async () => {
+    setBpjsCheck({ state: 'loading' });
+    try {
+      const params = f.bpjsNumber.trim()
+        ? `noKartu=${encodeURIComponent(f.bpjsNumber.trim())}`
+        : `nik=${encodeURIComponent(f.nik.trim())}`;
+      const r = await fetch(`/api/integrations/bpjs/peserta?${params}`);
+      const data = await r.json();
+      if (!r.ok) { setBpjsCheck({ state: 'error', msg: data?.error?.message ?? 'Gagal cek peserta' }); return; }
+      const p = data.data;
+      if (p.nama && !f.name) setF((cur) => ({ ...cur, name: p.nama }));
+      setBpjsCheck({ state: 'ok', msg: `${p.nama} · ${p.status}${p.faskes ? ` · ${p.faskes}` : ''}` });
+    } catch {
+      setBpjsCheck({ state: 'error', msg: 'Terjadi gangguan jaringan.' });
+    }
+  };
 
   const valid = f.name.trim().length > 2 && (f.nik === '' || /^\d{16}$/.test(f.nik))
     && (f.penjamin !== 'BPJS' || f.bpjsNumber.trim().length > 0);
@@ -314,9 +334,30 @@ function NewPatientForm({
           </div>
         </Field>
         {f.penjamin === 'BPJS' && (
-          <Field label="No. Kartu BPJS" full>
-            <input className="input mono" placeholder="13 digit" value={f.bpjsNumber} onChange={set('bpjsNumber')} />
-          </Field>
+          <div className="field" style={{ gridColumn: '1 / -1' }}>
+            <label className="label">No. Kartu BPJS</label>
+            <div className="flex gap-2">
+              <input className="input mono" placeholder="13 digit" value={f.bpjsNumber} onChange={set('bpjsNumber')} />
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm flex-none"
+                disabled={bpjsCheck.state === 'loading' || (!f.bpjsNumber.trim() && !/^\d{16}$/.test(f.nik))}
+                onClick={cekPeserta}
+              >
+                <Shield size={15} /> {bpjsCheck.state === 'loading' ? 'Mengecek…' : 'Cek Peserta'}
+              </button>
+            </div>
+            {bpjsCheck.state === 'ok' && (
+              <div className="flex items-center gap-1.5 mt-1 text-[12px] font-semibold" style={{ color: 'var(--green)' }}>
+                <Check size={14} /> {bpjsCheck.msg}
+              </div>
+            )}
+            {bpjsCheck.state === 'error' && (
+              <div className="flex items-center gap-1.5 mt-1 text-[12px] font-semibold" style={{ color: 'var(--red)' }}>
+                <AlertTriangle size={14} /> {bpjsCheck.msg}
+              </div>
+            )}
+          </div>
         )}
         <Field label="Alamat" full>
           <input className="input" placeholder="Alamat domisili" value={f.address} onChange={set('address')} />

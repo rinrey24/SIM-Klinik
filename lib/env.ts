@@ -15,6 +15,10 @@ const schema = z.object({
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   SENTRY_DSN: z.string().optional(),
 
+  WA_PROVIDER_URL: z.string().url().optional(),
+  WA_PROVIDER_TOKEN: z.string().optional(),
+  EMAIL_API_KEY: z.string().optional(),
+
   SATUSEHAT_BASE_URL: z.string().url().optional(),
   SATUSEHAT_AUTH_URL: z.string().url().optional(),
   SATUSEHAT_CLIENT_ID: z.string().optional(),

@@ -39,6 +39,12 @@ export function PengaturanClient() {
     queryKey: ['tariffs', 'all'],
     queryFn: async () => (await (await fetch('/api/tariffs')).json()) as { data: Tariff[] },
   });
+  const integ = useQuery({
+    queryKey: ['integration-status'],
+    queryFn: async () => (await (await fetch('/api/integrations/status')).json()) as {
+      data: { satusehat: boolean; bpjs: boolean; whatsapp: boolean };
+    },
+  });
 
   const patchClinic = useMutation({
     mutationFn: async (v: Partial<Branch>) => {
@@ -53,6 +59,9 @@ export function PengaturanClient() {
   const b = branch.data?.data;
   const users = usersQ.data?.data ?? [];
   const tariffs = tariffsQ.data?.data ?? [];
+  const ist = integ.data?.data;
+  const integBadge = (on?: boolean) =>
+    on ? <span className="badge b-green">Aktif</span> : <span className="badge b-amber">Belum diatur</span>;
   const tindakanCount = tariffs.filter((t) => t.type === 'tindakan').length;
   const konsultasi = tariffs.find((t) => t.type === 'jasa' && t.label.toLowerCase().includes('konsultasi'));
 
@@ -96,11 +105,12 @@ export function PengaturanClient() {
           </SettingCard>
 
           <SettingCard title="Integrasi">
-            <Row Icon={Shield} title="SATUSEHAT" sub="OAuth Client Credentials · siap submit FHIR R4" right={<span className="badge b-amber">Sandbox</span>} />
-            <Row Icon={CreditCard} title="BPJS Kesehatan" sub="PCare bridging (cek peserta)" right={<span className="badge b-amber">Sandbox</span>} />
-            <Row Icon={MessageCircle} title="WhatsApp Notifikasi" sub="Pengingat janji & nota digital" right={<Switch on />} />
+            <Row Icon={Shield} title="SATUSEHAT" sub="OAuth Client Credentials · submit FHIR R4 (Encounter/Condition/Observation/MedicationRequest)" right={integBadge(ist?.satusehat)} />
+            <Row Icon={CreditCard} title="BPJS Kesehatan" sub="PCare bridging · cek kepesertaan" right={integBadge(ist?.bpjs)} />
+            <Row Icon={MessageCircle} title="WhatsApp Notifikasi" sub="Pengingat janji & nota digital" right={integBadge(ist?.whatsapp)} />
             <div className="card-pad muted text-[12px]" style={{ borderTop: '1px solid var(--line-2)' }}>
-              Kredensial diatur lewat environment variables. Untuk produksi, simpan di tabel <code>integration_credentials</code> (terenkripsi).
+              Kredensial diatur lewat environment variables (<code>.env</code>). Submisi berjalan asinkron via outbox + worker;
+              kegagalan integrasi tidak memblokir pelayanan. Untuk produksi, simpan kredensial terenkripsi di tabel <code>integration_credentials</code>.
             </div>
           </SettingCard>
         </div>
@@ -215,22 +225,6 @@ function Row({
         {sub && <div className="muted text-[12.5px]">{sub}</div>}
       </div>
       {right}
-    </div>
-  );
-}
-
-function Switch({ on }: { on: boolean }) {
-  return (
-    <div
-      className="rounded-full flex-none relative"
-      style={{ width: 40, height: 24, background: on ? 'var(--teal-500)' : 'var(--line)' }}
-    >
-      <div
-        style={{
-          position: 'absolute', top: 3, left: on ? 19 : 3,
-          width: 18, height: 18, borderRadius: '50%', background: '#fff', transition: 'left .2s',
-        }}
-      />
     </div>
   );
 }

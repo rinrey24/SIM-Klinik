@@ -1,16 +1,2 @@
 import 'server-only';
-import { drizzle } from 'drizzle-orm/postgres-js';
-import postgres from 'postgres';
-import { env } from '@/lib/env';
-import * as schema from '@/drizzle/schema';
-
-declare global {
-  // eslint-disable-next-line no-var
-  var __pg: ReturnType<typeof postgres> | undefined;
-}
-
-const queryClient = global.__pg ?? postgres(env.DATABASE_URL, { max: 10 });
-if (env.NODE_ENV !== 'production') global.__pg = queryClient;
-
-export const db = drizzle(queryClient, { schema, casing: 'snake_case' });
-export { schema };
+export { db, schema } from './client';
