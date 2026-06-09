@@ -1,7 +1,9 @@
 'use client';
 import * as React from 'react';
 import { cn, initials } from '@/lib/utils';
-import { CheckCircle2, RotateCw, AlertTriangle, Shield, Check, Info, X } from 'lucide-react';
+import { CheckCircle2, RotateCw, AlertTriangle, Shield, Check, Info, X, type LucideIcon } from 'lucide-react';
+
+export type IconType = LucideIcon;
 
 export function Avatar({ name, size = 40, color }: { name: string; size?: number; color?: string }) {
   return (
@@ -66,7 +68,7 @@ export function SectionTitle({ children, action }: { children: React.ReactNode; 
 
 export function EmptyState({
   icon: Icon, title, sub, action,
-}: { icon: React.ComponentType<{ size?: number }>; title: string; sub?: string; action?: React.ReactNode }) {
+}: { icon: LucideIcon; title: string; sub?: string; action?: React.ReactNode }) {
   return (
     <div className="text-center px-5 py-9 flex flex-col items-center gap-2">
       <div

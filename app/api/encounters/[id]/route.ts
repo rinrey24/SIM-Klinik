@@ -1,5 +1,5 @@
 import { db } from '@/lib/db';
-import { encounters, patients, users, vitalSigns, medicalRecords, diagnoses, procedures, prescriptions, prescriptionItems, drugs, tariffs } from '@/drizzle/schema';
+import { encounters, patients, users, vitalSigns, medicalRecords } from '@/drizzle/schema';
 import { and, desc, eq } from 'drizzle-orm';
 import { apiAuth } from '@/lib/auth/rbac';
 import { err, ok } from '@/lib/api';
@@ -25,25 +25,26 @@ export async function GET(_: Request, ctx: { params: Promise<{ id: string }> }) 
 
   if (!enc) return err('NOT_FOUND', 'Kunjungan tidak ditemukan', 404);
 
-  const [vital] = await db.select().from(vitalSigns).where(eq(vitalSigns.encounterId, id)).orderBy(desc(vitalSigns.recordedAt)).limit(1);
+  // vital & history independen → paralel
+  const [vitalRows, history] = await Promise.all([
+    db.select().from(vitalSigns).where(eq(vitalSigns.encounterId, id)).orderBy(desc(vitalSigns.recordedAt)).limit(1),
+    db.select({
+      id: encounters.id, queueNo: encounters.queueNo, finishedAt: encounters.finishedAt,
+      arrivedAt: encounters.arrivedAt, status: encounters.status, syncStatus: encounters.syncStatus,
+      doctorName: users.name,
+      mrId: medicalRecords.id, s: medicalRecords.s, o: medicalRecords.o, a: medicalRecords.a, p: medicalRecords.p,
+    })
+      .from(encounters)
+      .innerJoin(users, eq(users.id, encounters.doctorId))
+      .leftJoin(medicalRecords, eq(medicalRecords.encounterId, encounters.id))
+      .where(and(
+        eq(encounters.patientId, enc.patient.id),
+        eq(encounters.branchId, auth.session.branchId),
+        eq(encounters.status, 'selesai'),
+      ))
+      .orderBy(desc(encounters.finishedAt))
+      .limit(10),
+  ]);
 
-  // history: kunjungan sebelumnya pasien yang sama
-  const history = await db.select({
-    id: encounters.id, queueNo: encounters.queueNo, finishedAt: encounters.finishedAt,
-    arrivedAt: encounters.arrivedAt, status: encounters.status, syncStatus: encounters.syncStatus,
-    doctorName: users.name,
-    mrId: medicalRecords.id, s: medicalRecords.s, o: medicalRecords.o, a: medicalRecords.a, p: medicalRecords.p,
-  })
-    .from(encounters)
-    .innerJoin(users, eq(users.id, encounters.doctorId))
-    .leftJoin(medicalRecords, eq(medicalRecords.encounterId, encounters.id))
-    .where(and(
-      eq(encounters.patientId, enc.patient.id),
-      eq(encounters.branchId, auth.session.branchId),
-      eq(encounters.status, 'selesai'),
-    ))
-    .orderBy(desc(encounters.finishedAt))
-    .limit(10);
-
-  return ok({ data: { ...enc, vital: vital ?? null, history } });
+  return ok({ data: { ...enc, vital: vitalRows[0] ?? null, history } });
 }

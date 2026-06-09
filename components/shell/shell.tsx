@@ -5,13 +5,14 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, UserPlus, ListChecks, Calendar, Stethoscope, Pill,
   Receipt, BarChart3, Settings, Heart, Bell, Search, LogOut, Menu, X, Sun, Moon,
+  type LucideIcon,
 } from 'lucide-react';
 import { Avatar, SatuSehatBadge } from '@/components/ui/primitives';
 import { cn } from '@/lib/utils';
 
 type Role = 'admin' | 'pendaftaran' | 'dokter' | 'perawat' | 'apoteker' | 'kasir';
 
-const META: Record<string, { title: string; Icon: React.ComponentType<{ size?: number }>; path: string }> = {
+const META: Record<string, { title: string; Icon: LucideIcon; path: string }> = {
   dashboard:   { title: 'Dashboard', Icon: LayoutDashboard, path: '/dashboard' },
   pendaftaran: { title: 'Pendaftaran', Icon: UserPlus, path: '/pendaftaran' },
   antrian:     { title: 'Antrian', Icon: ListChecks, path: '/antrian' },

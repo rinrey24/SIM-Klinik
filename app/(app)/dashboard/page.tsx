@@ -14,25 +14,24 @@ export default async function DashboardPage() {
   const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
   const todayEnd = new Date(todayStart); todayEnd.setDate(todayEnd.getDate() + 1);
 
-  const [pasienHariIniRow] = await db
-    .select({ n: sql<number>`count(*)::int` })
-    .from(encounters)
-    .where(and(eq(encounters.branchId, branchId), gte(encounters.arrivedAt, todayStart), lt(encounters.arrivedAt, todayEnd)));
-
-  const [antrianAktifRow] = await db
-    .select({ n: sql<number>`count(*)::int` })
-    .from(encounters)
-    .where(and(eq(encounters.branchId, branchId), sql`status <> 'selesai' and status <> 'batal'`));
-
-  const lowStock = await db
-    .select({ id: drugs.id, name: drugs.name, kind: drugs.kind, stock: drugs.stock, min: drugs.minStock })
-    .from(drugs)
-    .where(and(eq(drugs.branchId, branchId), sql`stock < min_stock`));
-
-  const [{ total: totalPasien }] = await db
-    .select({ total: sql<number>`count(*)::int` })
-    .from(patients)
-    .where(eq(patients.branchId, branchId));
+  // Jalankan paralel — keempat agregat independen
+  const [pasienRows, antrianRows, lowStock, patientRows] = await Promise.all([
+    db.select({ n: sql<number>`count(*)::int` })
+      .from(encounters)
+      .where(and(eq(encounters.branchId, branchId), gte(encounters.arrivedAt, todayStart), lt(encounters.arrivedAt, todayEnd))),
+    db.select({ n: sql<number>`count(*)::int` })
+      .from(encounters)
+      .where(and(eq(encounters.branchId, branchId), sql`status <> 'selesai' and status <> 'batal'`)),
+    db.select({ id: drugs.id, name: drugs.name, kind: drugs.kind, stock: drugs.stock, min: drugs.minStock })
+      .from(drugs)
+      .where(and(eq(drugs.branchId, branchId), sql`stock < min_stock`)),
+    db.select({ total: sql<number>`count(*)::int` })
+      .from(patients)
+      .where(eq(patients.branchId, branchId)),
+  ]);
+  const pasienHariIniRow = pasienRows[0];
+  const antrianAktifRow = antrianRows[0];
+  const totalPasien = patientRows[0].total;
 
   const greeting = new Date().getHours() < 11 ? 'Selamat pagi'
     : new Date().getHours() < 15 ? 'Selamat siang' : 'Selamat sore';

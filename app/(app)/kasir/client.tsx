@@ -3,6 +3,7 @@ import * as React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Receipt, ChevronLeft, Banknote, QrCode, CreditCard, Shield, CheckCircle2, Check, Printer, MessageCircle,
+  type LucideIcon,
 } from 'lucide-react';
 import { Avatar, PenjaminBadge, EmptyState, Toast } from '@/components/ui/primitives';
 import { formatJam, formatRp } from '@/lib/utils';
@@ -139,7 +140,7 @@ function BillView({ id, onBack, onToast }: { id: string; onBack: () => void; onT
     return <NotaSuccess bill={bill} onBack={onBack} onToast={onToast} />;
   }
 
-  const methods: { key: Method; label: string; Icon: React.ComponentType<{ size?: number }> }[] = [
+  const methods: { key: Method; label: string; Icon: LucideIcon }[] = [
     { key: 'tunai', label: 'Tunai', Icon: Banknote },
     { key: 'qris', label: 'QRIS', Icon: QrCode },
     { key: 'kartu', label: 'Kartu', Icon: CreditCard },

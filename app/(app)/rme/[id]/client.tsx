@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   AlertTriangle, Heart, Activity, Thermometer, Droplet, Plus, Pill, Trash2, Check,
-  CheckCircle2, Search, FileText,
+  CheckCircle2, Search, FileText, type LucideIcon,
 } from 'lucide-react';
 import { Avatar, PenjaminBadge, SatuSehatBadge, EmptyState, Modal, Toast } from '@/components/ui/primitives';
 import { formatTanggal } from '@/lib/utils';
@@ -325,7 +325,7 @@ function Encounter({
 function VitalInput({
   label, k, unit, Icon, value, onChange, placeholder,
 }: {
-  label: string; k: string; unit?: string; Icon?: React.ComponentType<{ size?: number }>;
+  label: string; k: string; unit?: string; Icon?: LucideIcon;
   value: string; onChange: (v: string) => void; placeholder?: string;
 }) {
   return (

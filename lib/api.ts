@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { ZodError, type ZodSchema } from 'zod';
+import { z, ZodError } from 'zod';
 
 export type ApiError = { code: string; message: string; details?: unknown };
 
@@ -11,10 +11,13 @@ export function ok<T>(data: T, status = 200) {
   return NextResponse.json(data, { status });
 }
 
-export async function parseJson<T>(req: Request, schema: ZodSchema<T>): Promise<{ data: T } | { error: NextResponse }> {
+export async function parseJson<S extends z.ZodTypeAny>(
+  req: Request,
+  schema: S,
+): Promise<{ data: z.infer<S> } | { error: NextResponse }> {
   let body: unknown;
   try { body = await req.json(); } catch { return { error: err('INVALID_JSON', 'Body bukan JSON yang valid', 422) }; }
-  try { return { data: schema.parse(body) }; }
+  try { return { data: schema.parse(body) as z.infer<S> }; }
   catch (e) {
     if (e instanceof ZodError) {
       return { error: err('VALIDATION_ERROR', e.issues[0]?.message ?? 'Validasi gagal', 422, e.flatten()) };

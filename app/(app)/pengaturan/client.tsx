@@ -3,6 +3,7 @@ import * as React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Heart, Shield, CreditCard, MessageCircle, User, UserPlus, Stethoscope, Activity, Building, Lock, ChevronRight,
+  type LucideIcon,
 } from 'lucide-react';
 import { Modal, Toast } from '@/components/ui/primitives';
 import { formatRp } from '@/lib/utils';
@@ -195,7 +196,7 @@ function SettingCard({ title, children }: { title: string; children: React.React
 function Row({
   Icon, title, sub, right, locked,
 }: {
-  Icon: React.ComponentType<{ size?: number }>;
+  Icon: LucideIcon;
   title: string; sub?: string; right?: React.ReactNode; locked?: boolean;
 }) {
   return (
